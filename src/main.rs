@@ -1,13 +1,8 @@
-#[derive(Debug)]
-enum Cell {
-    I(i32),
-    F(f64),
-    T(String),
-}
-
 fn main() {
-    let v = vec![Cell::I(1), Cell::F(2.1), Cell::T(String::from("Hello"))];
-    println!("{:?}", v)
+    let s = String::from("नमस्ते");
+    for c in s.chars() {
+        println!("{}", c)
+    }
 }
 
 #[cfg(test)]
