@@ -1,0 +1,6 @@
+[package]
+name = "collections"
+version = "0.1.0"
+authors = ["Michael Smith <michael.smith@puppet.com>"]
+
+[dependencies]
