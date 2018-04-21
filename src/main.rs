@@ -1,5 +1,12 @@
+#[derive(Debug)]
+enum Cell {
+    I(i32),
+    F(f64),
+    T(String),
+}
+
 fn main() {
-    let v = vec![1, 2, 3];
+    let v = vec![Cell::I(1), Cell::F(2.1), Cell::T(String::from("Hello"))];
     println!("{:?}", v)
 }
 
