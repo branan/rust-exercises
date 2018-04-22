@@ -3,24 +3,17 @@ extern crate serde_json;
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
-use serde_json::{Value, to_string_pretty};
 
 type Counts = HashMap<String, i32>;
-fn aggregate(data: HashMap<String, Value>) -> HashMap<String, Counts> {
+type JsonHash = HashMap<String, HashMap<String, String>>;
+
+fn aggregate(data: JsonHash) -> HashMap<String, Counts> {
     let mut agg = HashMap::new();
     for (_, val) in data {
-        if let Some(obj) = val.as_object() {
-            for (k, v) in obj {
-                let vals = agg.entry(k.clone()).or_insert(HashMap::<String,i32>::new());
-                if let Some(value) = v.as_str() {
-                    let nodes = vals.entry(value.to_string()).or_insert(0);
-                    *nodes += 1
-                } else {
-                    println!("Cannot aggregate non-string values: {:?}", v)
-                }
-            }
-        } else {
-            println!("Not an Object: {:?}", val)
+        for (k, v) in val {
+            let vals = agg.entry(k).or_insert(Counts::new());
+            let nodes = vals.entry(v).or_insert(0);
+            *nodes += 1
         }
     }
     agg
@@ -34,15 +27,60 @@ fn main() {
     };
 
     let file = File::open(inputfile).unwrap();
-    let data: HashMap<String, Value> = serde_json::from_reader(file).unwrap();
+    let data: JsonHash = serde_json::from_reader(file).unwrap();
     let agg = aggregate(data);
-    println!("{}", to_string_pretty(&agg).unwrap())
+    println!("{}", serde_json::to_string_pretty(&agg).unwrap())
 }
 
 #[cfg(test)]
+#[macro_use] extern crate maplit;
+
 mod tests {
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn aggregate_works() {
+        let data = hashmap!{
+            String::from("node1") => hashmap!{
+                String::from("application") => String::from("forge"),
+                String::from("version") => String::from("10.0"),
+                String::from("role") => String::from("app-server"),
+            },
+            String::from("node2") => hashmap!{
+                String::from("application") => String::from("forge"),
+                String::from("version") => String::from("10.0"),
+                String::from("role") => String::from("util"),
+                String::from("location") => String::from("slice"),
+            },
+            String::from("node3") => hashmap!{
+                String::from("application") => String::from("forge"),
+                String::from("version") => String::from("9.5"),
+                String::from("role") => String::from("db"),
+            },
+            String::from("node4") => hashmap!{
+                String::from("application") => String::from("anubis"),
+                String::from("location") => String::from("slice"),
+                String::from("role") => String::from("worker"),
+            },
+        };
+
+        let agg = ::aggregate(data);
+        assert_eq!(agg, hashmap!{
+            String::from("application") => hashmap!{
+                String::from("forge") => 3,
+                String::from("anubis") => 1,
+            },
+            String::from("version") => hashmap!{
+                String::from("10.0") => 2,
+                String::from("9.5") => 1,
+            },
+            String::from("role") => hashmap!{
+                String::from("app-server") => 1,
+                String::from("util") => 1,
+                String::from("db") => 1,
+                String::from("worker") => 1,
+            },
+            String::from("location") => hashmap!{
+                String::from("slice") => 2,
+            }
+        });
     }
 }
