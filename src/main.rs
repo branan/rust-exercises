@@ -27,7 +27,10 @@ fn main() {
     };
 
     let file = File::open(inputfile).unwrap();
-    let data: JsonHash = serde_json::from_reader(file).unwrap();
+    let data: JsonHash = match serde_json::from_reader(file) {
+        Ok(d) => d,
+        Err(e) => { println!("{}", e); std::process::exit(1) }
+    };
     let agg = aggregate(data);
     println!("{}", serde_json::to_string_pretty(&agg).unwrap())
 }
